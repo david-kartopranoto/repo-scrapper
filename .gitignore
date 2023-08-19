@@ -17,6 +17,8 @@
 # Dependency directories (remove the comment below to include it)
 *.csv
 *.yaml
+*.pdf
+*.html
 
 # vendor/
 
