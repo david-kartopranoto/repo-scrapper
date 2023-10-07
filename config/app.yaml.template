@@ -1,7 +1,8 @@
 bitbucket:
     token: Bearer TOKEN
     workspace: WORKSPACE
-    repo: REPO
+    repo_list: 
+        - REPO
     pr_page_len: 50
     activity_page_len: 50
     max_page: 50
@@ -9,4 +10,4 @@ bitbucket:
     pull_request_url: https://api.bitbucket.org/2.0/repositories/%s/%s/pullrequests?page=%d&pagelen=%d&sort=-updated_on&q=%s
 
 report:
-    activity_path: activity.csv
+    activity_format_path: activity.csv

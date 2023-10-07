@@ -447,49 +447,53 @@ type PullRequestReportData struct {
 }
 
 func ScrapPullRequestToCSV(cfg Config) {
-	res, err := fetchAllPullRequestList(cfg)
-	if err != nil {
-		log.Fatal(err)
-	}
+	for _, repo := range cfg.Bitbucket.RepoList {
 
-	var prDataList []PullRequestData
-	for _, pr := range res {
-		for _, value := range pr.Values {
-			prDataList = append(prDataList, value)
+		res, err := fetchAllPullRequestList(cfg, repo)
+		if err != nil {
+			log.Fatal(err)
 		}
-	}
 
-	res1, err1 := fetchAllPullRequestActivity(cfg, prDataList)
-	if err1 != nil {
-		log.Fatal(err1)
-	}
-
-	var activityList []PullRequestActivityData
-	for _, activity := range res1 {
-		for _, value := range activity.Values {
-			activityList = append(activityList, value)
+		var prDataList []PullRequestData
+		for _, pr := range res {
+			for _, value := range pr.Values {
+				prDataList = append(prDataList, value)
+			}
 		}
-	}
 
-	res2, err2 := fetchAllPullRequestDiffStat(cfg, prDataList)
-	if err1 != nil {
-		log.Fatal(err1)
-	}
-
-	var diffStatList []DiffStatActivityData
-	for _, diffstat := range res2 {
-		for _, value := range diffstat.Values {
-			value.PullRequestID = diffstat.PullRequestID
-			diffStatList = append(diffStatList, value)
+		res1, err1 := fetchAllPullRequestActivity(cfg, prDataList)
+		if err1 != nil {
+			log.Fatal(err1)
 		}
-	}
 
-	reportData, err2 := mapPrWithOtherData(prDataList, activityList, diffStatList)
-	if err2 != nil {
-		log.Fatal(err2)
-	}
+		var activityList []PullRequestActivityData
+		for _, activity := range res1 {
+			for _, value := range activity.Values {
+				activityList = append(activityList, value)
+			}
+		}
 
-	exportActivityData(cfg, reportData)
+		res2, err2 := fetchAllPullRequestDiffStat(cfg, prDataList)
+		if err1 != nil {
+			log.Fatal(err1)
+		}
+
+		var diffStatList []DiffStatActivityData
+		for _, diffstat := range res2 {
+			for _, value := range diffstat.Values {
+				value.PullRequestID = diffstat.PullRequestID
+				diffStatList = append(diffStatList, value)
+			}
+		}
+
+		reportData, err2 := mapPrWithOtherData(prDataList, activityList, diffStatList)
+		if err2 != nil {
+			log.Fatal(err2)
+		}
+
+		exportActivityData(cfg, reportData, repo)
+
+	}
 }
 
 func mapPrWithOtherData(prList []PullRequestData, activityList []PullRequestActivityData, diffStatList []DiffStatActivityData) (res map[int]*PullRequestReportData, err error) {
@@ -605,8 +609,8 @@ func fetchAllPullRequestActivity(cfg Config, prList []PullRequestData) (res []Pu
 	return res, err
 }
 
-func fetchPullRequestList(cfg Config, page int) (res PullRequestList, err error) {
-	url := fmt.Sprintf(cfg.Bitbucket.PullRequestURL, cfg.Bitbucket.Workspace, cfg.Bitbucket.Repo, page, cfg.Bitbucket.PRPagelen, cfg.Bitbucket.QueryFilter)
+func fetchPullRequestList(cfg Config, repo string, page int) (res PullRequestList, err error) {
+	url := fmt.Sprintf(cfg.Bitbucket.PullRequestURL, cfg.Bitbucket.Workspace, repo, page, cfg.Bitbucket.PRPagelen, cfg.Bitbucket.QueryFilter)
 	req, _ := http.NewRequest(http.MethodGet, url, nil)
 	req.Header.Set("Authorization", cfg.Bitbucket.Token)
 	resp, err := client.Do(req)
@@ -624,8 +628,8 @@ func fetchPullRequestList(cfg Config, page int) (res PullRequestList, err error)
 	return res, err
 }
 
-func fetchAllPullRequestList(cfg Config) (res []PullRequestList, err error) {
-	prList, err := fetchPullRequestList(cfg, 1)
+func fetchAllPullRequestList(cfg Config, repo string) (res []PullRequestList, err error) {
+	prList, err := fetchPullRequestList(cfg, repo, 1)
 	if err != nil {
 		return
 	}
@@ -647,7 +651,7 @@ func fetchAllPullRequestList(cfg Config) (res []PullRequestList, err error) {
 		wg.Add(1)
 		go func(cfg Config, page int, wg *sync.WaitGroup, results chan<- PullRequestList) {
 			defer wg.Done()
-			res, err := fetchPullRequestList(cfg, page)
+			res, err := fetchPullRequestList(cfg, repo, page)
 			if err == nil {
 				results <- res
 			}

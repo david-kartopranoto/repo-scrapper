@@ -19,6 +19,7 @@
 *.yaml
 *.pdf
 *.html
+*.zip
 
 # vendor/
 

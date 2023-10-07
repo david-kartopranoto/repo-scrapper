@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-func exportActivityData(cfg Config, prData map[int]*PullRequestReportData) (err error) {
+func exportActivityData(cfg Config, prData map[int]*PullRequestReportData, repoName string) (err error) {
 	data := [][]string{
 		{"ID", "SrcRepo", "SrcBranch", "DestRepo", "DestBranch", "Title", "Description", "State", "Author", "Created", "Updated",
 			"FileChanged", "Added", "Removed", "Total",
@@ -66,7 +66,7 @@ func exportActivityData(cfg Config, prData map[int]*PullRequestReportData) (err 
 		}
 	}
 
-	file, err := os.Create(cfg.Report.ActivityPath)
+	file, err := os.Create(fmt.Sprintf(cfg.Report.ActivityFormatPath, repoName))
 	if err != nil {
 		return err
 	}
